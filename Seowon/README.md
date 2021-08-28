@@ -1,6 +1,6 @@
-<b color='red'> xception.ipynb </b>
+<b> xception.ipynb </b>
   - 모델 : Xception
-  - 성능 : acc 76.603, f1 0.687
+  - 성능 : acc 76.603, f1 0.687 💥
   - train, validation 비율 : 9:1
   - optimizer : Adam
   - scheduler : StepLR
