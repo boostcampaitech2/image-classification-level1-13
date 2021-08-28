@@ -1,0 +1,1 @@
+#inference를 통해 나온 데이터를 GT와 비교 (F1 score)
