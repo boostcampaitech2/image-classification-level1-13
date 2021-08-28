@@ -1,4 +1,4 @@
-<b> xception.ipynb </b>
+<b color='red'> xception.ipynb </b>
   - 모델 : Xception
   - 성능 : acc 76.603, f1 0.687
   - train, validation 비율 : 9:1
