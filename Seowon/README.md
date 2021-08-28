@@ -6,6 +6,7 @@
   - scheduler : StepLR
   - error : test inference 하는 과정에서 이 에러 났는데, https://stackoverflow.com/questions/57079219/img-should-be-pil-image-got-class-torch-tensor
             transforms에서 toTensor 다음에 Normalize 
+  - 🔅 batch size 64로 늘려서 해봤는데 정확도 75프로로 조금 낮아짐. batchsize는 32가 적당해보임
  
 <b> efficientnet-Copy1.ipynb </b>
   - 모델 : efficientnet b0
