@@ -11,6 +11,7 @@
             transforms에서 toTensor 다음에 Normalize 
   - 🔅 batch size 64로 늘려서 해봤는데 정확도 75프로로 조금 낮아짐. Xception은 batch 32가 적당해보임
   - 🔅 train : validation 비율 95:5보다 9:1이 더 좋음. learning_rate 1e-4보다 1e-3이 더 좋음
+  - dropout 0.7보다 dropout 0.5가 더 좋음. dropout 0.7 acc = 75.5873
 
 <b> xception2.ipynb </b>
   - 모델 : Xception
