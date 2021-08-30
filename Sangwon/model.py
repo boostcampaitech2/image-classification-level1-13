@@ -227,3 +227,26 @@ class nfnet(nn.Module):
 #             elif isinstance(m,nn.Linear): # lnit dense
 #                 nn.init.kaiming_normal_(m.weight)
 #                 nn.init.zeros_(m.bias)
+
+class efficient_b0(nn.Module):
+    def __init__(self, num_classes: int = 1000):
+        super(efficient_b0, self).__init__()
+        self.net = timm.create_model("efficientnet_b0", pretrained=True, num_classes= num_classes)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.net(x)
+        return x
+    
+    # timm_models = timm.list_models("*") timm 지원 모델 목록
+    
+#     def init_param(self): # 파라미터 초기화할 필요가 없음 pretrained 쓸거임
+#         for m in self.modules():
+#             if isinstance(m,nn.Conv2d): # init conv
+#                 nn.init.kaiming_normal_(m.weight)
+#                 nn.init.zeros_(m.bias)
+#             elif isinstance(m,nn.BatchNorm2d): # init BN
+#                 nn.init.constant_(m.weight,1)
+#                 nn.init.constant_(m.bias,0)
+#             elif isinstance(m,nn.Linear): # lnit dense
+#                 nn.init.kaiming_normal_(m.weight)
+#                 nn.init.zeros_(m.bias)

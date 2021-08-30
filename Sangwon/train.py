@@ -37,35 +37,35 @@ def main():
 #     logger = config.get_logger('train')
 
     # 파일가져오기 # 위치 code/Model
-    csv_path = "../../input/data/train/train_class.csv" # Arg_parser로 입력받기
+    csv_path = "../../input/data/train/train_class_aug.csv" # Arg_parser로 입력받기
     data = pd.read_csv(csv_path)
     TRAIN_PATH = data['path'].values
     TRAIN_CLASS = data['total_class_18'].values
-    TRAIN_TRANSFORM = transforms.Compose([transforms.CenterCrop((400,300)), transforms.Resize((224, 224)), 
-                                          transforms.RandomRotation(degrees=8), 
-                                          transforms.RandomHorizontalFlip(), transforms.ToTensor()#,
+    TRAIN_TRANSFORM = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(),
+                                          transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 #                                           AddGaussianNoise(0., 1.)
                                          ])
     
-    csv_path_valid = "../../input/data/train/valid_class.csv" # Arg_parser로 입력받기
+    csv_path_valid = "../../input/data/train/val_class_aug.csv" # Arg_parser로 입력받기
     data_valid = pd.read_csv(csv_path_valid)
     VALID_PATH = data_valid['path'].values
     VALID_CLASS = data_valid['total_class_18'].values
-    VALID_TRANSFORM = transforms.Compose([transforms.CenterCrop((400,300)), transforms.Resize((224, 224)), transforms.ToTensor()])
+    VALID_TRANSFORM = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(),
+                                         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
     
     # 데이터셋 생성 순서 -> img_paths, transform, class_=None, train=False
     # Train
     dataset_train = dataset.Dataset(img_paths=TRAIN_PATH, transform= TRAIN_TRANSFORM, class_ = TRAIN_CLASS, train=True)
-    dataset_train = DataLoader(dataset=dataset_train, batch_size=16, shuffle=True, num_workers=4) # GPU * 4
+    dataset_train = DataLoader(dataset=dataset_train, batch_size=32, shuffle=True, num_workers=4) # GPU * 4
     
     dataset_valid = dataset.Dataset(img_paths=VALID_PATH, transform= VALID_TRANSFORM, class_ = VALID_CLASS, train=True) # train은 False가 맞지만, valid 데이터가 맞는지 확인을 위해서는 라벨을 return 받아야함 따라서 train = True로 줌
-    dataset_valid = DataLoader(dataset=dataset_valid, batch_size=16, shuffle=True, num_workers=4) # GPU * 4
+    dataset_valid = DataLoader(dataset=dataset_valid, batch_size=32, shuffle=True, num_workers=4) # GPU * 4
     
     # validation 분할
 #     valid_data_loader = data_loader.split_validation()
 
     # 모델 생성
-    model_ = model.nfnet(num_classes=18)
+    model_ = model.efficient_b0(num_classes=18)
 #     logger.info(model)
 
     # GPU 준비 - 어차피 여기선 v100 1개 할당만 받음
@@ -109,7 +109,7 @@ def main():
 #     model_.init_param() # initialize parameters # pretrain일 경우할 필요 없음
 #     model_.load_weights("./darknet53.conv.74") # darknet만
     model_.train() # to train mode 
-    EPOCHS,print_every = 100, 1
+    EPOCHS,print_every = 300, 1
     prior_acc = 0
     for epoch in range(EPOCHS):
         loss_val_sum = 0
@@ -132,9 +132,9 @@ def main():
             with open("./log/TrainLog.txt", "a") as file:
                 file.write("epoch:[%d] loss:[%.3f] train_accr:[%.3f] test_accr:[%.3f].\n"%
                    (epoch,loss_val_avg,train_accr,test_accr))
-            if prior_acc < test_accr: # 성능이 개선된 경우에만 저장
-                torch.save(model_.state_dict(), "./save_weights/model_weight{}.pt".format(epoch))
-                prior_acc = test_accr
+#             if prior_acc < test_accr: # 성능이 개선된 경우에만 저장
+            torch.save(model_.state_dict(), "./save_weights/model_weight{}.pt".format(epoch))
+#             prior_acc = test_accr
     print ("Done")
 
 

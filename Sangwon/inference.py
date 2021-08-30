@@ -17,9 +17,8 @@ image_dir = os.path.join(test_dir, 'images')
 # Test Dataset 클래스 객체를 생성하고 DataLoader를 만듭니다.
 image_paths = [os.path.join(image_dir, img_id) for img_id in submission.ImageID]
 transform = transforms.Compose([
-    transforms.CenterCrop((400,300)),
     Resize((224, 224)),
-    ToTensor()
+    ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
 dataset_ = dataset.Dataset(image_paths, transform, train=False)
@@ -30,9 +29,9 @@ loader = DataLoader(
 )
 
 # 모델을 정의합니다. (학습한 모델이 있다면 torch.load로 모델을 불러주세요!)
-Weight_PATH = "./save_weights/model_weight5.pt"
+Weight_PATH = "./save_weights/model_weight20.pt"
 device = torch.device('cuda')
-model_ = model.nfnet(num_classes=18).to(device)
+model_ = model.efficient_b0(num_classes=18).to(device)
 model_.load_state_dict(torch.load(Weight_PATH))
 model_.eval()
 
