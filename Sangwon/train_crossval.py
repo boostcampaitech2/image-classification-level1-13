@@ -20,10 +20,6 @@ from torch.optim.lr_scheduler import StepLR
     
 def main(args, data_, save_path):
     ############################################ 폴더 확인 ##############################################################
-    # wandb init
-    wandb.init(project='sangwon', entity='13ai')
-    config = wandb.config.update(args)
-    
     print("args_name", args.name)
     # 모델 저장폴더, 로그폴더 생성
     if args.name == None:
@@ -94,6 +90,10 @@ def main(args, data_, save_path):
         model_module = getattr(import_module("model"), args.model)
         model_ = model_module(num_classes=18)
 
+        # wandb init
+        wandb.init(project='sangwon', entity='13ai')
+        config = wandb.config.update(args)
+        
         # wandb 이름
         wandb.run.name = "{}_Fold_{}".format(args.name, k)
 
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Template')
     
     # Data and Model checkpoints directories
-    parser.add_argument("--epochs", type=int, default=1, help='number of epochs to train (default: 10)')
+    parser.add_argument("--epochs", type=int, default=10, help='number of epochs to train (default: 10)')
     parser.add_argument("--dataset", type=str, default="Dataset", help='dataset augmentation type (default: Dataset)')
     parser.add_argument("--resize", nargs="+", type=int, default=[380, 380], help='resize size for image when training')
     parser.add_argument('--batch_size', type=int, default=32, help='input batch size for training (default: 32)')
