@@ -59,6 +59,7 @@ def inference(data_dir, model_dir, output_dir, args):
 
     img_paths = [os.path.join(img_root, img_id) for img_id in info.ImageID]
     dataset = TestDataset(img_paths, args.resize)
+    '''
     mean=(0.548, 0.504, 0.479)
     std=(0.237, 0.247, 0.246)
     transform = transforms.Compose([
@@ -69,7 +70,7 @@ def inference(data_dir, model_dir, output_dir, args):
             AddGaussianNoise()
         ])
     dataset = transform(dataset)
-    
+    '''
     
     loader = torch.utils.data.DataLoader(
         dataset,

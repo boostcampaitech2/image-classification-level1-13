@@ -35,6 +35,45 @@ class BaseAugmentation:
         return self.transform(image)
 '''
 
+class Cutout(object):
+    """Randomly mask out one or more patches from an image.
+    Args:
+        n_holes (int): Number of patches to cut out of each image.
+        length (int): The length (in pixels) of each square patch.
+    """
+    def __init__(self, n_holes, length):
+        self.n_holes = n_holes
+        self.length = length
+
+    def __call__(self, image):
+        """
+        Args:
+            img (Tensor): Tensor image of size (C, H, W).
+        Returns:
+            Tensor: Image with n_holes of dimension length x length cut out of it.
+        """
+        h = image.size(1)
+        w = image.size(2)
+
+        mask = np.ones((h, w), np.float32)
+
+        for n in range(self.n_holes):
+            y = np.random.randint(h)
+            x = np.random.randint(w)
+
+            y1 = np.clip(y - self.length // 2, 0, h)
+            y2 = np.clip(y + self.length // 2, 0, h)
+            x1 = np.clip(x - self.length // 2, 0, w)
+            x2 = np.clip(x + self.length // 2, 0, w)
+
+            mask[y1: y2, x1: x2] = 0.
+
+        mask = torch.from_numpy(mask)
+        mask = mask.expand_as(image)
+        image = image * mask
+
+        return image
+
 
 class AddGaussianNoise(object):
     """
@@ -59,7 +98,8 @@ class BaseAugmentation: #그냥 안바꾸고 손수 조정
             ColorJitter(0.1, 0.1, 0.1, 0.1),# resize랑 center crop 말고 aug
             ToTensor(),
             Normalize(mean=mean, std=std),
-            AddGaussianNoise()
+            AddGaussianNoise(),
+            Cutout(n_holes=2, length=32)      
         ])
 
     def __call__(self, image):
@@ -185,8 +225,11 @@ class MaskBaseDataset(Dataset):
         # 미리 변환하기
         pre_transform = transforms.Compose([
                 CenterCrop((320, 256)),
-                Resize(resize, Image.BILINEAR)
+                Resize(resize, Image.BILINEAR),
+
+                
                 ])
+        
         return pre_transform(image)
 
     def __getitem__(self, index):
@@ -311,23 +354,22 @@ class MaskSplitByProfileDataset(MaskBaseDataset):
 
 
 class TestDataset(Dataset):
-    def __init__(self, img_paths, resize, mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246)):
+    def __init__(self, img_paths, resize, mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), **args):
         self.img_paths = img_paths
         self.transform = transforms.Compose([
-            Resize(resize, Image.BILINEAR),
-            ToTensor(),
-            Normalize(mean=mean, std=std),
-            ColorJitter(0.1, 0.1, 0.1, 0.1),
-            ToTensor(),
-            Normalize(mean=mean, std=std),
-            AddGaussianNoise()
+                CenterCrop((320, 256)),
+                Resize(resize, Image.BILINEAR),
+                ColorJitter(0.1, 0.1, 0.1, 0.1),# 똑같이
+                ToTensor(),
+                Normalize(mean=mean, std=std),
+                AddGaussianNoise(),
+            Cutout(n_holes = 2,length= 32)
         ])
 
     def __getitem__(self, index):
         image = Image.open(self.img_paths[index])
-
         if self.transform:
-            image = self.transform(image)
+            image = transform(image)
         return image
 
     def __len__(self):

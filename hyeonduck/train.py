@@ -17,11 +17,32 @@ from torch.utils.tensorboard import SummaryWriter
 
 from dataset import MaskBaseDataset
 from loss import create_criterion
-import wandb
+##
+import wandb 
+import GPUtil 
+from threading import Thread
+import time
+#
 
-wandb.init(project="hd",group = '13AI')
+wandb.init(project='hd', entity='13ai')
+class Monitor(Thread):
+    def __init__(self, delay):
+        super(Monitor, self).__init__()
+        self.stopped = False
+        self.delay = delay # Time between calls to GPUtil
+        self.start()
+
+    def run(self):
+        while not self.stopped:
+            GPUtil.showUtilization()
+            time.sleep(self.delay)
+
+    def stop(self):
+        self.stopped = True
+        
 
 
+monitor = Monitor(10)
 def seed_everything(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -158,6 +179,7 @@ def train(data_dir, model_dir, args):
     best_val_acc = 0
     best_val_loss = np.inf
     for epoch in range(args.epochs):
+
         # train loop
         model.train()
         loss_value = 0
@@ -272,8 +294,8 @@ if __name__ == '__main__':
     parser.add_argument('--val_ratio', type=float, default=0.1, help='ratio for validaton (default: 0.1)')
     parser.add_argument('--criterion', type=str, default='cross_entropy',
                         help='criterion type (default: cross_entropy)')
-    parser.add_argument('--lr_decay_step', type=int, default=20,
-                        help='learning rate scheduler deacy step (default: 20)')
+    parser.add_argument('--lr_decay_step', type=int, default=5,
+                        help='learning rate scheduler deacy step (default: 5)')
     parser.add_argument('--log_interval', type=int, default=20,
                         help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
