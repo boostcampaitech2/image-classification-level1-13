@@ -98,7 +98,7 @@ def train(data_dir, model_dir, args):
     # -- dataset
     dataset_module = getattr(import_module("dataset"), args.dataset)  # default: BaseAugmentation
     dataset = dataset_module(
-        resize=args.resize,
+        resize=args.resize,# resize를 따로 하기위해 옮겨놈
         data_dir=data_dir,
     )
     num_classes = dataset.num_classes  # 18
@@ -107,7 +107,7 @@ def train(data_dir, model_dir, args):
     transform_module = getattr(import_module("dataset"), args.augmentation)  # default: BaseAugmentation
 
     transform = transform_module(
-        mean=dataset.mean,
+        mean=dataset.mean, # resize 빠짐
         std=dataset.std,
     )
     dataset.set_transform(transform)
@@ -258,7 +258,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
     parser.add_argument('--epochs', type=int, default=1, help='number of epochs to train (default: 1)')
     parser.add_argument('--dataset', type=str, default='MaskBaseDataset',
-                        help='dataset augmentation type (default: MaskBaseDataset)')
+                        help='dataset augmentation type (default: MaskBaseDataset)') # 사용하지 마세요
     parser.add_argument('--augmentation', type=str, default='BaseAugmentation',
                         help='data augmentation type (default: BaseAugmentation)')
     parser.add_argument("--resize", nargs="+", type=list, default=[112, 112],

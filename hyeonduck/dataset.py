@@ -53,10 +53,10 @@ class AddGaussianNoise(object):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 
-class BaseAugmentation:
+class BaseAugmentation: #그냥 안바꾸고 손수 조정
     def __init__(self, mean, std, **args):
         self.transform = transforms.Compose([
-            ColorJitter(0.1, 0.1, 0.1, 0.1),
+            ColorJitter(0.1, 0.1, 0.1, 0.1),# resize랑 center crop 말고 aug
             ToTensor(),
             Normalize(mean=mean, std=std),
             AddGaussianNoise()
@@ -133,9 +133,9 @@ class MaskBaseDataset(Dataset):
         self.transform = None
         self.setup()
         self.calc_statistics()
-        self.X = []
+        self.X = [] # 리스트 만들기
         for x in self.image_paths:
-            self.X.append(self.pre_transform(resize,Image.open(x)))
+            self.X.append(self.pre_transform(resize,Image.open(x))) # 리스트에 사이즈 바꺼서 집어넣기
         
 
     def setup(self):
@@ -182,7 +182,7 @@ class MaskBaseDataset(Dataset):
             self.std = (np.mean(squared, axis=0) - self.mean ** 2) ** 0.5 / 255
             
     def pre_transform(self,resize,image):
-        
+        # 미리 변환하기
         pre_transform = transforms.Compose([
                 CenterCrop((320, 256)),
                 Resize(resize, Image.BILINEAR)
@@ -192,7 +192,7 @@ class MaskBaseDataset(Dataset):
     def __getitem__(self, index):
         assert self.transform is not None, ".set_tranform 메소드를 이용하여 transform 을 주입해주세요"
 
-        image = self.X[index]
+        image = self.X[index]# 변환한 리스트를 꺼내옴
         
         mask_label = self.get_mask_label(index)
         gender_label = self.get_gender_label(index)
