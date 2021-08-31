@@ -1,5 +1,4 @@
-# import argparse
-# import collections
+import argparse
 import torch
 import numpy as np
 import dataset
@@ -11,62 +10,64 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.transforms import Resize, ToTensor, Normalize
 import torch.optim as optim
-
-# from parse_config import ConfigParser
-
-# fix random seeds for reproducibility
-SEED = 123
-torch.manual_seed(SEED)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-np.random.seed(SEED)
-
-class AddGaussianNoise(object):
-    def __init__(self, mean=0., std=1.):
-        self.std = std
-        self.mean = mean
+import wandb
+from sklearn.model_selection import train_test_split
+from importlib import import_module
+import os
+import json
+from torch.optim.lr_scheduler import StepLR
+    
+def main(args, data_, save_path):
+    ############################################ 폴더 확인 ##############################################################
+    # wandb init
+    wandb.init(project='sangwon', entity='13ai')
+    config = wandb.config.update(args)
+    
+    print("args_name", args.name)
+    # 모델 저장폴더, 로그폴더 생성
+    if args.name == None:
+        raise RuntimeError('실험 이름 필수 지정(중복안되게 지을 것)')
+    if not os.path.exists("{}".format(save_path)):
+        os.mkdir("{}".format(save_path))
+    if not os.path.exists("{}/{}".format(save_path, args.name)):
+        os.mkdir("{}/{}".format(save_path, args.name))
+    else:
+        raise RuntimeError('실험 이름 중복')
+    if not os.path.exists("./log"):
+        os.mkdir("./log")
         
-    def __call__(self, tensor):
-        return tensor + torch.randn(tensor.size()) * self.std + self.mean
-    
-    def __repr__(self):
-        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
-    
-# def main(config):
-def main():
-#     logger = config.get_logger('train')
-
+    ############################################# 데이터 생성 ############################################################
     # 파일가져오기 # 위치 code/Model
-    csv_path = "../../input/data/train/train_class_aug.csv" # Arg_parser로 입력받기
-    data = pd.read_csv(csv_path)
-    TRAIN_PATH = data['path'].values
-    TRAIN_CLASS = data['total_class_18'].values
-    TRAIN_TRANSFORM = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(),
-                                          transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-#                                           AddGaussianNoise(0., 1.)
-                                         ])
+    data = pd.read_csv(data_)
+    train, val = train_test_split(data, test_size=args.val_ratio, random_state=123, stratify=data[['total_class_18']])
     
-    csv_path_valid = "../../input/data/train/val_class_aug.csv" # Arg_parser로 입력받기
-    data_valid = pd.read_csv(csv_path_valid)
-    VALID_PATH = data_valid['path'].values
-    VALID_CLASS = data_valid['total_class_18'].values
-    VALID_TRANSFORM = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(),
+    # train data
+    TRAIN_PATH = train['path'].values
+    TRAIN_CLASS = train['total_class_18'].values
+    TRAIN_TRANSFORM = transforms.Compose([transforms.Resize((args.resize[0], args.resize[1])), transforms.ToTensor(),
+                                          transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                                         ])
+    # valida data
+    VALID_PATH = val['path'].values
+    VALID_CLASS = val['total_class_18'].values
+    VALID_TRANSFORM = transforms.Compose([transforms.Resize((args.resize[0], args.resize[1])), transforms.ToTensor(),
                                          transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
     
-    # 데이터셋 생성 순서 -> img_paths, transform, class_=None, train=False
-    # Train
-    dataset_train = dataset.Dataset(img_paths=TRAIN_PATH, transform= TRAIN_TRANSFORM, class_ = TRAIN_CLASS, train=True)
-    dataset_train = DataLoader(dataset=dataset_train, batch_size=32, shuffle=True, num_workers=4) # GPU * 4
+    dataset_module = getattr(import_module("dataset"), args.dataset)
+    # train_load
+    dataset_train = dataset_module(img_paths=TRAIN_PATH, transform= TRAIN_TRANSFORM, class_ = TRAIN_CLASS, train=True)
+    dataset_train = DataLoader(dataset=dataset_train, batch_size=args.batch_size, shuffle=True, num_workers=4) # GPU * 4
     
-    dataset_valid = dataset.Dataset(img_paths=VALID_PATH, transform= VALID_TRANSFORM, class_ = VALID_CLASS, train=True) # train은 False가 맞지만, valid 데이터가 맞는지 확인을 위해서는 라벨을 return 받아야함 따라서 train = True로 줌
-    dataset_valid = DataLoader(dataset=dataset_valid, batch_size=32, shuffle=True, num_workers=4) # GPU * 4
-    
-    # validation 분할
-#     valid_data_loader = data_loader.split_validation()
+    # valid_load
+    dataset_valid = dataset_module(img_paths=VALID_PATH, transform= VALID_TRANSFORM, class_ = VALID_CLASS, train=True) # train은 False가 맞지만, valid 데이터가 맞는지 확인을 위해서는 라벨을 return 받아야함 따라서 train = True로 줌
+    dataset_valid = DataLoader(dataset=dataset_valid, batch_size=args.valid_batch_size, shuffle=True, num_workers=4) # GPU * 4
 
-    # 모델 생성
-    model_ = model.efficient_b0(num_classes=18)
-#     logger.info(model)
+    ############################################# 모델 생성 ############################################################
+    model_module = getattr(import_module("model"), args.model)
+    model_ = model_module(num_classes=18)
+    
+    # wandb 이름
+    wandb.run.name = args.name
 
     # GPU 준비 - 어차피 여기선 v100 1개 할당만 받음
     n_gpu = torch.cuda.device_count()
@@ -82,13 +83,17 @@ def main():
         model_ = torch.nn.DataParallel(model_, device_ids=device_ids)
 
     # loss함수
-    loss_ = loss.CrossEntropyLoss()
-
+    loss_module = getattr(import_module("loss"), args.criterion)
+    loss_ = loss_module()
+    
     # optimizer
     trainable_params = filter(lambda p: p.requires_grad, model_.parameters())
-    lr = 1e-3
-    optm = optim.Adam(trainable_params, lr)
+    opt_module = getattr(import_module("torch.optim"), args.optimizer)
+    optm = opt_module(trainable_params, lr=args.lr, weight_decay=5e-4)
     
+    scheduler = StepLR(optm, args.lr_decay_step, gamma=0.5)
+    
+    ############################################# 학습 과정 ############################################################
     # 학습과정 중 평가
     def func_eval(model_,data_iter,device): # 평가하기
         with torch.no_grad():
@@ -109,8 +114,14 @@ def main():
 #     model_.init_param() # initialize parameters # pretrain일 경우할 필요 없음
 #     model_.load_weights("./darknet53.conv.74") # darknet만
     model_.train() # to train mode 
-    EPOCHS,print_every = 300, 1
-    prior_acc = 0
+    EPOCHS,print_every = args.epochs, args.log_interval
+#     prior_acc = 0
+    wandb.watch(model_)
+    
+    # 모델 구조 저장 - wandb에도 저장됨
+    with open(os.path.join(save_path, args.name, 'config.json'), 'w', encoding='utf-8') as f:
+        json.dump(vars(args), f, ensure_ascii=False, indent=4)
+    
     for epoch in range(EPOCHS):
         loss_val_sum = 0
         for batch_in,batch_out in dataset_train:
@@ -129,30 +140,51 @@ def main():
             test_accr = func_eval(model_,dataset_valid,device)
             print ("epoch:[%d] loss:[%.3f] train_accr:[%.3f] test_accr:[%.3f]."%
                    (epoch,loss_val_avg,train_accr,test_accr))
-            with open("./log/TrainLog.txt", "a") as file:
+            
+            wandb.log({"loss":loss_val_avg,
+                      "train_acc":train_accr*100,
+                      "val_acc":test_accr*100})
+            
+            with open("./log/TrainLog_{}.txt".format(args.name), "a") as file: # 혹시 모를 백업
                 file.write("epoch:[%d] loss:[%.3f] train_accr:[%.3f] test_accr:[%.3f].\n"%
                    (epoch,loss_val_avg,train_accr,test_accr))
 #             if prior_acc < test_accr: # 성능이 개선된 경우에만 저장
-            torch.save(model_.state_dict(), "./save_weights/model_weight{}.pt".format(epoch))
+            torch.save(model_.state_dict(), "{}/{}/model_weight{}.pt".format(save_path, args.name, epoch))
 #             prior_acc = test_accr
+        
+        scheduler.step()
     print ("Done")
 
 
 if __name__ == '__main__':
-#     args = argparse.ArgumentParser(description='PyTorch Template')
-#     args.add_argument('-c', '--config', default=None, type=str,
-#                       help='config file path (default: None)')
-#     args.add_argument('-r', '--resume', default=None, type=str,
-#                       help='path to latest checkpoint (default: None)')
-#     args.add_argument('-d', '--device', default=None, type=str,
-#                       help='indices of GPUs to enable (default: all)')
+    parser = argparse.ArgumentParser(description='PyTorch Template')
+    
+    # Data and Model checkpoints directories
+    parser.add_argument("--epochs", type=int, default=100, help='number of epochs to train (default: 100)')
+    parser.add_argument("--dataset", type=str, default="Dataset", help='dataset augmentation type (default: Dataset)')
+    parser.add_argument("--resize", nargs="+", type=int, default=[380, 380], help='resize size for image when training')
+    parser.add_argument('--batch_size', type=int, default=32, help='input batch size for training (default: 32)')
+    parser.add_argument('--valid_batch_size', type=int, default=32, help='input batch size for validing (default: 32)')
+    parser.add_argument('--model', type=str, default='efficient_b4', help='model type (default: efficient_b4)') # 내 전담 모델
+    parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
+    parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
+    parser.add_argument('--val_ratio', type=float, default=0.1, help='ratio for validaton (default: 0.1)')
+    parser.add_argument('--criterion', type=str, default='CrossEntropyLoss', help='criterion type (default: CrossEntropyLoss)')
+    parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
+    parser.add_argument('--log_interval', type=int, default=1, help='how many batches to wait before logging training status')
+    parser.add_argument('--name', default=None, help='model save at {SM_MODEL_DIR}/{name}')
 
-#     # custom cli options to modify configuration from default values given in json file.
-#     CustomArgs = collections.namedtuple('CustomArgs', 'flags type target')
-#     options = [
-#         CustomArgs(['--lr', '--learning_rate'], type=float, target='optimizer;args;lr'),
-#         CustomArgs(['--bs', '--batch_size'], type=int, target='data_loader;args;batch_size')
-#     ]
-#     config = ConfigParser.from_args(args, options)
-#     main(config)
-    main()
+    # Container environment
+    parser.add_argument('--data', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/total_class_aug.csv'), help="data csv file (default=/opt/ml/input/data/train/total_class_aug.csv)")
+    parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR', './save_weights'), help="directory path having model files")
+
+    args = parser.parse_args()
+    
+    # fix random seeds for reproducibility
+    SEED = 123
+    torch.manual_seed(SEED)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(SEED)
+
+    main(args, args.data, args.model_dir)
