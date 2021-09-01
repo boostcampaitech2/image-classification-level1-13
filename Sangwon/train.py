@@ -16,6 +16,7 @@ from importlib import import_module
 import os
 import json
 from torch.optim.lr_scheduler import StepLR
+import util
     
 def main(args, data_, save_path):
     ############################################ 폴더 확인 ##############################################################
@@ -64,7 +65,7 @@ def main(args, data_, save_path):
 
     ############################################# 모델 생성 ############################################################
     model_module = getattr(import_module("model"), args.model)
-    model_ = model_module(num_classes=18)
+    model_ = model_module(num_classes=18       )
     
     # wandb 이름
     wandb.run.name = args.name
@@ -122,6 +123,8 @@ def main(args, data_, save_path):
     with open(os.path.join(save_path, args.name, 'config.json'), 'w', encoding='utf-8') as f:
         json.dump(vars(args), f, ensure_ascii=False, indent=4)
     
+    figure_save = None
+    
     for epoch in range(EPOCHS):
         loss_val_sum = 0
         for batch_in,batch_out in dataset_train:
@@ -144,6 +147,16 @@ def main(args, data_, save_path):
             wandb.log({"loss":loss_val_avg,
                       "train_acc":train_accr*100,
                       "val_acc":test_accr*100})
+            
+            # wandb figure save
+            if epoch==(EPOCHS-1): # 마지막 epoch figure 저장
+                inputs_np = torch.clone(batch_in).detach().cpu().permute(0, 2, 3, 1).numpy()
+                inputs_np = util.denormalize_image(inputs_np, np.array([0.485, 0.456, 0.406]), np.array([0.229, 0.224, 0.225])) # input, mean, std
+                figure_save = util.grid_image(
+                    inputs_np, batch_out, y_pred, n=16, 
+                    shuffle=False
+                    )
+                wandb.log({"train_figure": figure_save})
             
             with open("./log/TrainLog_{}.txt".format(args.name), "a") as file: # 혹시 모를 백업
                 file.write("epoch:[%d] loss:[%.3f] train_accr:[%.3f] test_accr:[%.3f].\n"%

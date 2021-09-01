@@ -91,7 +91,7 @@ def main(args, data_, save_path):
         model_ = model_module(num_classes=18)
 
         # wandb init
-        wandb.init(project='sangwon', entity='13ai')
+        run = wandb.init(project='sangwon', entity='13ai', reinit=True)
         config = wandb.config.update(args)
         
         # wandb 이름
@@ -167,6 +167,7 @@ def main(args, data_, save_path):
         print ("{} Fold Done".format(k))
         EachFoldHighAcc.append(prior_acc * 100)
         EachFoldHighAccEpoch.append(high_acc_epoch)
+        run.finish()
     print("Average of FoldHighAcc : ", sum(EachFoldHighAcc)/len(EachFoldHighAcc)) # 각 fold별 에포크 마지막 값의 valid_acc 평균
     print("EachFoldHighAccEpoch : ", EachFoldHighAccEpoch) # 각 폴드별 가장 높은 에포크 -> txt 파일로 저장하고 inference에서 사용하도록 수정
 
