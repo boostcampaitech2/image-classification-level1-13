@@ -14,8 +14,6 @@ from importlib import import_module
 def main(args, test_dir, weight_path):
     if not os.path.exists("{}/{}".format(weight_path, args.name)):
         raise RuntimeError('실험이 존재하지 않음')
-    if not os.path.exists("{}/{}/{}".format(weight_path, args.name, args.weight_file)):
-        raise RuntimeError('저장된 모델이 없음')
     ############################################# 데이터 생성 ############################################################
     # meta 데이터와 이미지 경로를 불러옵니다.
     submission = pd.read_csv(os.path.join(test_dir, 'info.csv'))
@@ -41,6 +39,8 @@ def main(args, test_dir, weight_path):
     
     for k, epoch in enumerate(args.kfold):
     ############################################# 모델 생성 ############################################################
+        if not os.path.exists("{}/{}/{}_Fold_{}{}.pt".format(weight_path, args.name, k, args.weight_file, epoch)):
+            raise RuntimeError('저장된 모델이 없음')
         print("{} Fold Inference Start".format(k))
         # 모델을 정의합니다. (학습한 모델이 있다면 torch.load로 모델을 불러주세요!)
         Weight_PATH = "{}/{}/{}_Fold_{}{}.pt".format(weight_path, args.name, k, args.weight_file, epoch) # epoch 저장하고 가져오기 만들어야함
