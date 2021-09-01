@@ -57,7 +57,7 @@ def main(args, test_dir, weight_path):
             with torch.no_grad():
                 images = images.to(device)
                 pred = model_(images)
-#                 pred = pred.argmax(dim=-1)
+#                 pred = pred.argmax(dim=-1) # 확률로 저장할 거임
                 all_predictions.extend(pred.cpu().numpy())
                 
         fold_pred = np.array(all_predictions)
