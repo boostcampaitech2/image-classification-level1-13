@@ -52,7 +52,7 @@
 
 <b> basecode </b>
   - 모델 : xception
-  - 성능 : <i>f1 loss</i> acc 72.5556% f1 0.6304
+  - 성능 : (<i>f1 loss</i>) acc 72.5556% f1 0.6304
   - val_ratio : 0.2
   - optimizer : Adam
   - scheduler : CosineAnnealingLR
