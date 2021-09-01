@@ -45,10 +45,13 @@
   - 🔅 train set에 대한 accuracy는 99, 100까지 나오는데 validation set에 대한 accuracy는 77이 최대인 걸 보니 overfitting 문제가 있어서, dropout 0.5를 추가함
   - 🔅 weight_decay에 l2 normalization을 적용
   - 참고 사이트 
-  -- [multioutput관련1](https://medium.com/jdsc-tech-blog/multioutput-cnn-in-pytorch-c5f702d4915f) 
-  -- [multioutput관련2](https://learnopencv.com/multi-label-image-classification-with-pytorch/)
-  -- [feature/classifier](https://rwightman.github.io/pytorch-image-models/feature_extraction/#multi-scale-feature-maps-feature-pyramid)
-  -- [xception code](https://github.com/tstandley/Xception-PyTorch/blob/master/xception.py)
+  : [multioutput관련1](https://medium.com/jdsc-tech-blog/multioutput-cnn-in-pytorch-c5f702d4915f) 
+    [multioutput관련2](https://learnopencv.com/multi-label-image-classification-with-pytorch/)
+    [feature/classifier](https://rwightman.github.io/pytorch-image-models/feature_extraction/#multi-scale-feature-maps-feature-pyramid)
+    [xception code](https://github.com/tstandley/Xception-PyTorch/blob/master/xception.py)
+  
+  - 🔅 age 예측 분포 중에 30~59가 적기도 하고, loss도 낮게 나와서 age의 loss에 1.2를 곱해줌 성능 향상 -> 76.5238, 0.6814
+  
 
 <b> basecode </b>
   - 모델 : xception
@@ -58,3 +61,5 @@
   - scheduler : CosineAnnealingLR
   - 🔅 loss function을 f1, label_smoothing, cross_entropy, focal loss 를 사용해봤는데, cross_entropy > label_smoothing > f1 순으로 좋음
   - 🔅 Dataset이 같은 얼굴 사람 사진이 train과 valid에 들어가면 valid에서 학습한 사람의 얼굴로 test하게 되는 문제가 발생하므로 사람으로 train/val 나눔
+  
+   
