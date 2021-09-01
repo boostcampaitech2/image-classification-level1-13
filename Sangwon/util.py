@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import random
 import numpy as np
 import copy
+import torch
 
 def grid_image(np_images, gts, preds, n=16, shuffle=False):
     """
@@ -22,7 +23,9 @@ def grid_image(np_images, gts, preds, n=16, shuffle=False):
     choices = random.sample(range(batch_size), k=n)
     figure = plt.figure(figsize=(12, 18 + 2))  # cautions: hardcoded, 이미지 크기에 따라 figsize 를 조정해야 할 수 있습니다. T.T
     plt.subplots_adjust(top=0.8)               # cautions: hardcoded, 이미지 크기에 따라 top 를 조정해야 할 수 있습니다. T.T
-
+    
+    preds = torch.argmax(preds, dim=-1) # 제일 높은 것 선택해줘야함
+    
     n_grid = np.ceil(n ** 0.5)
     for idx, choice in enumerate(choices):
         gt = gts[choice].item()

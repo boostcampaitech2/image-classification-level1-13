@@ -57,11 +57,11 @@ def main(args, data_, save_path):
     dataset_module = getattr(import_module("dataset"), args.dataset)
     # train_load
     dataset_train = dataset_module(img_paths=TRAIN_PATH, transform= TRAIN_TRANSFORM, class_ = TRAIN_CLASS, train=True)
-    dataset_train = DataLoader(dataset=dataset_train, batch_size=args.batch_size, shuffle=True, num_workers=4) # GPU * 4
+    dataset_train = DataLoader(dataset=dataset_train, batch_size=args.batch_size, shuffle=True, num_workers=4, drop_last=True) # GPU * 4
     
     # valid_load
     dataset_valid = dataset_module(img_paths=VALID_PATH, transform= VALID_TRANSFORM, class_ = VALID_CLASS, train=True) # train은 False가 맞지만, valid 데이터가 맞는지 확인을 위해서는 라벨을 return 받아야함 따라서 train = True로 줌
-    dataset_valid = DataLoader(dataset=dataset_valid, batch_size=args.valid_batch_size, shuffle=True, num_workers=4) # GPU * 4
+    dataset_valid = DataLoader(dataset=dataset_valid, batch_size=args.valid_batch_size, shuffle=True, num_workers=4, drop_last=True) # GPU * 4
 
     ############################################# 모델 생성 ############################################################
     model_module = getattr(import_module("model"), args.model)
