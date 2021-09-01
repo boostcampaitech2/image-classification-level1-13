@@ -168,7 +168,7 @@ def main(args, data_, save_path):
         EachFoldHighAcc.append(prior_acc * 100)
         EachFoldHighAccEpoch.append(high_acc_epoch)
     print("Average of FoldHighAcc : ", sum(EachFoldHighAcc)/len(EachFoldHighAcc)) # 각 fold별 에포크 마지막 값의 valid_acc 평균
-    print("EachFoldHighAccEpoch : ", EachFoldHighAccEpoch) # 각 폴드별 가장 높은 에포크
+    print("EachFoldHighAccEpoch : ", EachFoldHighAccEpoch) # 각 폴드별 가장 높은 에포크 -> txt 파일로 저장하고 inference에서 사용하도록 수정
 
 
 if __name__ == '__main__':
