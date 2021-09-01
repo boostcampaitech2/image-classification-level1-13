@@ -41,7 +41,7 @@
   - train, validation 비율 : 9:1
   - optimizer : Adam
   - scheduler : StepLR
-  - ✅ Xception timm으로 가져오니까 에러떠서 전체 코드를 가져와서 사용했는데, pretrained 모델을 사용 못해서 정확도가 떨어지는 것 같기도 함
+  - ✅ Xception timm으로 가져오니까 에러떠서 전체 코드를 가져와서 사용했는데, pretrained 모델을 사용 못해서 정확도가 떨어지는 것 같기도 함 -> pretrained 해결 후 정확도 74로 상승
   - 🔅 train set에 대한 accuracy는 99, 100까지 나오는데 validation set에 대한 accuracy는 77이 최대인 걸 보니 overfitting 문제가 있어서, dropout 0.5를 추가함
   - 🔅 weight_decay에 l2 normalization을 적용
   - 참고 사이트 
@@ -50,3 +50,11 @@
   -- [feature/classifier](https://rwightman.github.io/pytorch-image-models/feature_extraction/#multi-scale-feature-maps-feature-pyramid)
   -- [xception code](https://github.com/tstandley/Xception-PyTorch/blob/master/xception.py)
 
+<b> basecode </b>
+  - 모델 : xception
+  - 성능 : acc 70.5238%, f1 0.6019
+  - val_ratio : 0.2
+  - optimizer : Adam
+  - scheduler : CosineAnnealingLR
+  - 🔅 loss function을 f1, label_smoothing, cross_entropy, focal loss 를 사용해봤는데, cross_entropy > label_smoothing > f1 순으로 좋음
+  - 🔅 Dataset이 같은 얼굴 사람 사진이 train과 valid에 들어가면 valid에서 학습한 사람의 얼굴로 test하게 되는 문제가 발생하므로 사람으로 train/val 나눔
