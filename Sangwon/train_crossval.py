@@ -12,11 +12,11 @@ from torchvision.transforms import Resize, ToTensor, Normalize
 import torch.optim as optim
 import wandb
 from sklearn.model_selection import StratifiedKFold
-
 from importlib import import_module
 import os
 import json
 from torch.optim.lr_scheduler import StepLR
+import util
     
 def main(args, data_, save_path):
     ############################################ 폴더 확인 ##############################################################
@@ -154,6 +154,16 @@ def main(args, data_, save_path):
                 wandb.log({"loss":loss_val_avg,
                           "train_acc":train_accr*100,
                           "val_acc":test_accr*100})
+                
+                # wandb figure save
+                if epoch==(EPOCHS-1): # 마지막 epoch figure 저장
+                    inputs_np = torch.clone(batch_in).detach().cpu().permute(0, 2, 3, 1).numpy()
+                    inputs_np = util.denormalize_image(inputs_np, np.array([0.485, 0.456, 0.406]), np.array([0.229, 0.224, 0.225])) # input, mean, std
+                    figure_save = util.grid_image(
+                        inputs_np, batch_out, y_pred, n=16, 
+                        shuffle=False
+                        )
+                    wandb.log({"train_figure": figure_save})
 
                 with open("./log/TrainLog_{}.txt".format(args.name), "a") as file: # 혹시 모를 백업
                     file.write("fold:[%d] epoch:[%d] loss:[%.3f] train_accr:[%.3f] test_accr:[%.3f].\n"%
@@ -184,7 +194,6 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='efficient_b4', help='model type (default: efficient_b4)') # 내 전담 모델
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
-    parser.add_argument('--val_ratio', type=float, default=0.1, help='ratio for validaton (default: 0.1)')
     parser.add_argument('--criterion', type=str, default='CrossEntropyLoss', help='criterion type (default: CrossEntropyLoss)')
     parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
     parser.add_argument('--log_interval', type=int, default=1, help='how many batches to wait before logging training status')

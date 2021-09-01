@@ -149,7 +149,7 @@ def main(args, data_, save_path):
                       "val_acc":test_accr*100})
             
             # wandb figure save
-            if epoch==0: # 마지막 epoch figure 저장
+            if epoch==(EPOCHS-1): # 마지막 epoch figure 저장
                 inputs_np = torch.clone(batch_in).detach().cpu().permute(0, 2, 3, 1).numpy()
                 inputs_np = util.denormalize_image(inputs_np, np.array([0.485, 0.456, 0.406]), np.array([0.229, 0.224, 0.225])) # input, mean, std
                 figure_save = util.grid_image(
