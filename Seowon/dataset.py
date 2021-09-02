@@ -61,7 +61,7 @@ class FaceCrop(object):
         boxes,probs = self.mtcnn.detect(img)
 
         if not isinstance(boxes, np.ndarray):
-            print('Nope!')
+            # print('Nope!')
             # 직접 crop
 #             img=img[100:400, 50:350, :]
             img = img[50:380, 80:300, :3]
