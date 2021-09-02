@@ -72,9 +72,9 @@ def inference(data_dir, model_dir, output_dir, args):
                 all_predictions.extend(pred.cpu().numpy())
         fold_pred = np.array(all_predictions)
         if oof_pred is None:
-            oof_pred = fold_pred / len(5)
+            oof_pred = fold_pred / 5
         else:
-            oof_pred += fold_pred / len(5)
+            oof_pred += fold_pred / 5
         print("{} Fold Inference Done".format(i+1))
 
     info['ans'] = np.argmax(oof_pred, axis=1)    
