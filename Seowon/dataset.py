@@ -52,11 +52,13 @@ class FaceCrop(object):
     def __init__(self, mean=0., std=1.):
         self.std = std
         self.mean = mean
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.mtcnn = MTCNN(keep_all=True, device=device)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.mtcnn = MTCNN(keep_all=True, device=self.device)
 
-    def __call__(self, img):
-        boxes,probs = mtcnn.detect(img)
+    def __call__(self, img_dir):
+        img = cv2.imread(img_dir)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        boxes,probs = self.mtcnn.detect(img)
 
         if not isinstance(boxes, np.ndarray):
             print('Nope!')
@@ -77,6 +79,8 @@ class FaceCrop(object):
             if ymax > 512: ymax = 512
             
             img = img[ymin:ymax, xmin:xmax, :3]
+        
+        img = Image.fromarray(img)
             
         return img
     
@@ -703,7 +707,8 @@ class TestDatasetFaceCrop(Dataset):
         image = Image.open(self.img_paths[index])
 
         if self.transform:
-            image = self.transform(image)
+            image = self.transform(self.img_paths[index])
+#             image = self.transform(image)
         return image
 
     def __len__(self):

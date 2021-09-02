@@ -6,23 +6,25 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
-from dataset import TestDataset, MaskBaseDataset
+from dataset import TestDataset, MaskBaseDataset, TestDatasetFaceCrop
 
 import numpy as np
 
+from multiprocessing import Process, Pool, set_start_method
 
 
-def load_model(saved_model, num_classes, device):
+
+def load_model(saved_model, num_classes, device, k_th):
     model_cls = getattr(import_module("model"), args.model)
     model = model_cls(
-        num_classes=num_classes
+        num_classes=18
     )
 
     # tarpath = os.path.join(saved_model, 'best.tar.gz')
     # tar = tarfile.open(tarpath, 'r:gz')
     # tar.extractall(path=saved_model)
 
-    model_path = os.path.join(saved_model, 'best.pth')
+    model_path = os.path.join(saved_model, f'best_fold_{k_th}.pth')
     model.load_state_dict(torch.load(model_path, map_location=device))
 
     return model
@@ -36,9 +38,8 @@ def inference(data_dir, model_dir, output_dir, args):
     device = torch.device("cuda" if use_cuda else "cpu")
     
     num_classes = MaskBaseDataset.num_classes  # 18
-    model = load_model(model_dir, num_classes, device).to(device)
-    model.eval()
-
+    
+    
     img_root = os.path.join(data_dir, 'images')
     info_path = os.path.join(data_dir, 'info.csv')
     info = pd.read_csv(info_path)
@@ -48,7 +49,7 @@ def inference(data_dir, model_dir, output_dir, args):
     loader = torch.utils.data.DataLoader(
         dataset,
         batch_size=args.batch_size,
-        num_workers=8,
+        num_workers=2,
         shuffle=False,
         pin_memory=use_cuda,
         drop_last=False,
@@ -56,23 +57,40 @@ def inference(data_dir, model_dir, output_dir, args):
 
     print("Calculating inference results..")
     preds = []
-    with torch.no_grad():
-        for idx, images in enumerate(loader):
-            images = images.to(device)
-            pred = model(images)
-            pred = pred.argmax(dim=-1)
-            preds.extend(pred.cpu().numpy())
+    oof_pred = None
+    k_idx = 1
+    k = 5
+    for i in range(5):
+        model = load_model(model_dir, num_classes, device, i).to(device)
+        model.eval()
+        all_predictions = []
+        with torch.no_grad():
+            for idx, images in enumerate(loader):
+                images = images.to(device)
+                pred = model(images)
+#                 pred = pred.argmax(dim=-1)
+                all_predictions.extend(pred.cpu().numpy())
+        fold_pred = np.array(all_predictions)
+        if oof_pred is None:
+            oof_pred = fold_pred / len(5)
+        else:
+            oof_pred += fold_pred / len(5)
+        print("{} Fold Inference Done".format(i+1))
 
-    info['ans'] = preds
-    info.to_csv(os.path.join(output_dir, f'output_ensemble.csv'), index=False)
+    info['ans'] = np.argmax(oof_pred, axis=1)    
+    info.to_csv(os.path.join(output_dir, f'output_facecrop.csv'), index=False)
     print(f'Inference Done!')
 
 
 if __name__ == '__main__':
+    try:
+        set_start_method('spawn')
+    except RuntimeError:
+        pass
     parser = argparse.ArgumentParser()
 
     # Data and model checkpoints directories
-    parser.add_argument('--batch_size', type=int, default=1000, help='input batch size for validing (default: 1000)')
+    parser.add_argument('--batch_size', type=int, default=256, help='input batch size for validing (default: 1000)')
     parser.add_argument('--resize', type=tuple, default=(300, 200), help='resize size for image when you trained (default: (96, 128))')
     parser.add_argument('--model', type=str, default='Xception', help='model type (default: BaseModel)')
 
@@ -88,5 +106,6 @@ if __name__ == '__main__':
     output_dir = args.output_dir
 
     os.makedirs(output_dir, exist_ok=True)
+    torch.cuda.empty_cache()
 
     inference(data_dir, model_dir, output_dir, args)
