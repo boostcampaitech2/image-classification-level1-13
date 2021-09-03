@@ -58,6 +58,13 @@ parser.add_argument('--data', type=str, default=os.environ.get('SM_CHANNEL_TRAIN
 parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR', './save_weights'), help="directory path having model files")
 ```
 
+You can use wandb which is developer tools for machine learning.
+
+Change code in train_crossval.py
+```
+run = wandb.init(project='Your Project Name', entity='Your Entity', reinit=True)
+```
+
 ## Inference
 If trained weights are prepared, you can create files that contains class probabilities of images.
 Default setting is already done.
