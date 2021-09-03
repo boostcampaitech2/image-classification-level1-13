@@ -1,22 +1,9 @@
 # image-classification-level1-13
-Code for 3rd place solution in Kaggle Human Protein Atlas Image Classification Challenge.
-
-To read the detailed solution, please, refer to [the Kaggle post](https://www.kaggle.com/c/human-protein-atlas-image-classification/discussion/77320)
+Code for solution in AI Stage Image Classification Challenge.
 
 ## Hardware
 The following specs were used to create the original solution.
-- Ubuntu 16.04 LTS
-- Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz
-- 3x NVIDIA TitanX 
-
-## Reproducing Submission
-To reproduct my submission without retrainig, do the following steps:
-1. [Installation](#installation)
-2. [Download Official Image](#download-official-image)
-3. [Make RGBY Images](#make-rgby-images) for official.
-4. [Download Pretrained models](#pretrained-models)
-5. [Inference](#inference)
-6. [Make Submission](#make-submission)
+- Nvidia V100
 
 ## Installation
 All requirements should be detailed in requirements.txt. Using Anaconda is strongly recommended.
@@ -27,50 +14,22 @@ pip install -r requirements.txt
 ```
 
 ## Dataset Preparation
-All required files except images are already in data directory.
-If you generate CSV files (duplicate image list, split, leak.. ), original files are overwritten. The contents will be changed, but It's not a problem.
+All required files include images are already in data directory.
 
-### Prepare Images
-After downloading and converting images, the data directory is structured as:
+In the beginning, the data is structured as:
 ```
-data
-  +- raw
-  |  +- train
-  |  +- test
-  |  +- external
-  +- rgby
-  |  +- train
-  |  +- test
-  |  +- external
-```
-#### Download Official Image
-Download and extract *train.zip* and *test.zip* to *data/raw* directory.
-If the Kaggle API is installed, run following command.
-```
-$ kaggle competitions download -c human-protein-atlas-image-classification -f train.zip
-$ kaggle competitions download -c human-protein-atlas-image-classification -f test.zip
-$ mkdir -p data/raw
-$ unzip train.zip -d data/raw/train
-$ unzip test.zip -d data/raw/test
-```
-
-#### Download External Images
-To download external images, run following command. The external images will be located in *data/raw/external*
-```
-$ python tools/download.py
-```
-
-#### Make RGBY Images
-To train or inference, converting to RGBY image is required. Run following commands.
-
-For official:
-```
-$ python tools/make_rgby.py --input_dir=data/raw/train --output_dir=data/rgby/train
-$ python tools/make_rgby.py --input_dir=data/raw/test --output_dir=data/rgby/test
-```
-For external:
-```
-$ python tools/make_rgby.py --input_dir=data/raw/external --output_dir=data/rgby/external
+/
+  +- input
+  |  +- data
+  |  |  +- train
+  |  |  |  +- images (including many ID folders)
+  |  |  |  +- train.csv
+  |  |  +- eval
+  |  |  |  +- images
+  |  |  |  +- info.csv
+  +- code
+  |  +- sample_submission.ipynb
+  |  +- requirements.txt
 ```
 
 ### Generate CSV files
